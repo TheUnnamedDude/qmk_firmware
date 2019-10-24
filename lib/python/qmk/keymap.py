@@ -36,7 +36,7 @@ def template(keyboard):
         keyboard
             The keyboard to return a template for.
     """
-    template_name = 'keyboards/%s/templates/keymap.c' % keyboard
+    template_name = f"keyboards/{keyboard}/templates/keymap.c"
 
     if os.path.exists(template_name):
         with open(template_name, 'r') as fd:
@@ -64,20 +64,20 @@ def generate(keyboard, layout, layers, custom_keycodes):
     layer_txt = []
     for layer_num, layer in enumerate(layers):
         layer_keys = ', '.join(layer)
-        layer_txt.append('\t[%s] = %s(%s)' % (layer_num, layout, layer_keys))
+        layer_txt.append(f'\t[{layer_num}] = {layout}({layer_keys})')
 
     keymap = ',\n'.join(layer_txt)
     keymap_c = template(keyboard)
 
     keycodes = []
     if isinstance(custom_keycodes, list):
-        keycodes.append("\t%s = SAFE_RANGE" % custom_keycodes[0])
+        keycodes.append(f"\t{custom_keycodes[0]} = SAFE_RANGE")
         for keycode in custom_keycodes[1:]:
-            keycodes.append("\t%s" % keycode)
+            keycodes.append(f"\t{keycode}")
 
     keycodes_enum = ',\n'.join(keycodes)
     if len(keycodes_enum) != 0:
-        keycodes_enum = "enum custom_keycodes {\n%s\n};" % keycodes_enum
+        keycodes_enum = f"enum custom_keycodes {{\n{keycodes_enum}\n}};"
 
     return keymap_c.replace('__KEYMAP_GOES_HERE__', keymap).replace('__CUSTOM_KEYCODES_HERE__', keycodes_enum)
 
