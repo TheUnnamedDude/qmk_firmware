@@ -36,7 +36,7 @@ def json_keymap(cli):
         user_keymap = json.load(fd)
 
     # Generate the keymap
-    keymap_c = qmk.keymap.generate(user_keymap['keyboard'], user_keymap['layout'], user_keymap['layers'])
+    keymap_c = qmk.keymap.generate(user_keymap['keyboard'], user_keymap['layout'], user_keymap['layers'], user_keymap.get('custom_keycodes'))
 
     if cli.args.output:
         output_dir = os.path.dirname(cli.args.output)

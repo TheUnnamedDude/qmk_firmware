@@ -17,9 +17,12 @@ DEFAULT_KEYMAP_C = """#include QMK_KEYBOARD_H
  * edit it directly.
  */
 
+__CUSTOM_KEYCODES_HERE__
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 __KEYMAP_GOES_HERE__
 };
+
 """
 
 
@@ -42,7 +45,7 @@ def template(keyboard):
     return DEFAULT_KEYMAP_C
 
 
-def generate(keyboard, layout, layers):
+def generate(keyboard, layout, layers, custom_keycodes):
     """Returns a keymap.c for the specified keyboard, layout, and layers.
 
     Args:
@@ -54,6 +57,9 @@ def generate(keyboard, layout, layers):
 
         layers
             An array of arrays describing the keymap. Each item in the inner array should be a string that is a valid QMK keycode.
+
+        custom_keycodes
+            An array describing which custom keycodes to be generated
     """
     layer_txt = []
     for layer_num, layer in enumerate(layers):
@@ -63,10 +69,20 @@ def generate(keyboard, layout, layers):
     keymap = ',\n'.join(layer_txt)
     keymap_c = template(keyboard)
 
-    return keymap_c.replace('__KEYMAP_GOES_HERE__', keymap)
+    keycodes = []
+    if isinstance(custom_keycodes, list):
+        keycodes.append("\t%s = SAFE_RANGE" % custom_keycodes[0])
+        for keycode in custom_keycodes[1:]:
+            keycodes.append("\t%s" % keycode)
+
+    keycodes_enum = ',\n'.join(keycodes)
+    if len(keycodes_enum) != 0:
+        keycodes_enum = "enum custom_keycodes {\n%s\n};" % keycodes_enum
+
+    return keymap_c.replace('__KEYMAP_GOES_HERE__', keymap).replace('__CUSTOM_KEYCODES_HERE__', keycodes_enum)
 
 
-def write(keyboard, keymap, layout, layers):
+def write(keyboard, keymap, layout, layers, custom_keycodes):
     """Generate the `keymap.c` and write it to disk.
 
     Returns the filename written to.
@@ -83,8 +99,11 @@ def write(keyboard, keymap, layout, layers):
 
         layers
             An array of arrays describing the keymap. Each item in the inner array should be a string that is a valid QMK keycode.
+
+        custom_keycodes
+            An array describing which custom keycodes to be generated
     """
-    keymap_c = generate(keyboard, layout, layers)
+    keymap_c = generate(keyboard, layout, layers, custom_keycodes)
     keymap_path = qmk.path.keymap(keyboard)
     keymap_dir = os.path.join(keymap_path, keymap)
     keymap_file = os.path.join(keymap_dir, 'keymap.c')
